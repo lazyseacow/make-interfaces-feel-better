@@ -2,6 +2,8 @@
 
 Transition specificity and GPU compositing hints.
 
+Apply the shared [Design Token integration rules](SKILL.md#design-token-integration) to the examples below.
+
 ## Transition Only What Changes
 
 Never use `transition: all` or Tailwind's `transition-all`. Always specify the exact properties that change. Tailwind's bare `transition` maps to a curated default list of colors, opacity, shadow, and transforms, not to `all`; still prefer naming exactly what changes.
@@ -44,9 +46,9 @@ Never use `transition: all` or Tailwind's `transition-all`. Always specify the e
 
 ## Use `will-change` Sparingly
 
-`will-change` hints the browser to pre-promote an element to its own GPU compositing layer. Without it, the browser promotes the element only when the animation starts — that one-time layer promotion can cause a micro-stutter on the first frame.
+`will-change` hints which properties are about to change so the browser can prepare rendering optimizations. Layer promotion is one possible optimization, rather than a guarantee.
 
-This particularly helps when an element is changing `scale`, `rotation`, or moving around with `transform`. For other properties, it doesn't help much — the browser can't composite them on the GPU anyway.
+For the animations covered by this skill, consider a targeted hint for `transform`, `opacity`, or `filter` only after observing a rendering problem. Effectiveness depends on the effect, browser, and device; keep the hint only when measurement shows an improvement. See [MDN's usage guidance](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/will-change).
 
 ### Rules
 
@@ -74,15 +76,15 @@ This particularly helps when an element is changing `scale`, `rotation`, or movi
 
 ### Useful Properties
 
-| Property | GPU-compositable | Worth using `will-change` |
+| Property | Compositing potential | When to consider `will-change` |
 | --- | --- | --- |
-| `transform` | Yes | Yes |
-| `opacity` | Yes | Yes |
-| `filter` (blur, brightness) | Yes | Yes |
-| `clip-path` | Newer Chromium only | Rarely; not reliable cross-browser |
-| `top`, `left`, `width`, `height` | No | No |
-| `background`, `border`, `color` | No | No |
+| `transform` | Often composited | Only after a measured improvement |
+| `opacity` | Often composited | Only after a measured improvement |
+| `filter` (blur, brightness) | Depends on effect and browser | Only after profiling the actual effect |
+| `clip-path` | Browser- and effect-dependent | Outside this skill's suggested hint set |
+| `top`, `left`, `width`, `height` | Layout-affecting | Fix the animation approach first |
+| `background`, `border`, `color` | Usually require painting | Skip speculative hints |
 
 ### When to Skip
 
-Modern browsers are already good at optimizing on their own. Only add `will-change` when you notice first-frame stutter — Safari in particular benefits from it. Don't add it preemptively to every animated element; each extra compositing layer costs memory.
+Let the browser optimize normally when the animation is smooth. Add a hint only for an observed problem, and remove it when no longer needed. Avoid blanket hints: retained optimizations can increase memory use and rendering cost.

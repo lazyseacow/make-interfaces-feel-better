@@ -2,6 +2,8 @@
 
 Icon weight, states, sizing, and direction: the details that make icons sit naturally in an interface.
 
+Apply the shared [Design Token integration rules](SKILL.md#design-token-integration) to the recipes below.
+
 ## Match Icon Stroke to Text Weight
 
 An icon next to text should carry the same optical weight as the text.
@@ -12,11 +14,11 @@ An icon next to text should carry the same optical weight as the text.
 | Medium/Semibold (500–600) | `2px` |
 | Bold (700), or emphasized standalone | `2.5px` |
 
-Use one stroke weight per icon set on a surface. Size inline icons relative to the text's cap height, typically `1em`–`1.25em`.
+Keep stroke weights consistent for equivalent text roles within the icon set; the weights above distinguish regular, semibold, and bold contexts. Size inline icons relative to the text's cap height, typically `1em`–`1.25em`.
 
 ## One SVG, Recolored per State
 
-Use one SVG drawn with `currentColor`; let CSS drive hover, selected, and disabled states. Strip hardcoded `fill` and `stroke` colors when importing icons.
+For monochrome icons whose state changes only in color or opacity, use one `currentColor` SVG and let CSS drive hover, selected, and disabled states. Strip hardcoded `fill` and `stroke` colors from those icons when importing them. Use the icon family's corresponding glyph when the state requires an outline-to-fill shape change.
 
 ```html
 <svg fill="none" stroke="currentColor" stroke-width="2">…</svg>
@@ -36,7 +38,7 @@ Use one SVG drawn with `currentColor`; let CSS drive hover, selected, and disabl
 | Outline | Default state: toolbars, list rows, inline with text |
 | Fill | Selected or active state: active tab, toggled bookmark, liked heart |
 
-The swap between variants is a contextual icon animation; use the exact cross-fade values in [animations.md](animations.md).
+When animating a variant swap, apply [Motion Restraint](animations.md#motion-restraint) first, then use the [required icon animation values](animations.md#required-icon-animation-values).
 
 ## Design at Render Size
 
@@ -60,4 +62,8 @@ The swap between variants is a contextual icon animation; use the exact cross-fa
 }
 ```
 
-Analyze composite icons part by part: an overlay may keep its position even when the base glyph flips. Give every icon-only control an accessible name and mark purely decorative icons hidden from assistive technology.
+Analyze composite icons part by part: an overlay may keep its position even when the base glyph flips.
+
+## Accessible Icon Controls
+
+Give every icon-only control an accessible name and mark purely decorative icons hidden from assistive technology.

@@ -2,6 +2,8 @@
 
 Interruptible animations, enter/exit transitions, contextual icon animations, and motion restraint.
 
+Apply the shared [Design Token integration rules](SKILL.md#design-token-integration) to the recipes below. Apply [Motion Restraint](#motion-restraint) before selecting an animation; code fragments for animated states belong only in the permitted-motion path.
+
 ## Interruptible Animations
 
 Users change intent mid-interaction. If animations aren't interruptible, the interface feels broken.
@@ -177,36 +179,43 @@ Exit animations should be softer and less attention-grabbing than enter animatio
 ```
 
 **Key points:**
-- Use a small fixed `translateY` (e.g., `-12px`) instead of the full container height
-- Keep some directional movement to indicate where the element went
+- For contextual fades, use a small fixed `translateY` (e.g., `-12px`); use full travel when spatial context requires it
+- Keep directional movement only when it helps explain where the element went
 - Exit duration should be shorter than enter duration (150ms vs 300ms)
 - Use a subtle exit when it preserves spatial context. Remove immediately when motion adds no information, the interaction repeats frequently, or reduced motion is requested.
 
 ## Contextual Icon Animations
 
-When icons appear or disappear contextually (on hover, on state change), animate them with `opacity`, `scale`, and `blur` rather than just toggling visibility.
+For contextual icon changes that pass the [Motion Restraint](#motion-restraint) conditions, animate with `opacity`, `scale`, and `blur`. Use the [required values](#required-icon-animation-values) below. For high-frequency interactions or reduced motion, preserve the static state cue and use the restrained or immediate feedback specified there.
 
 ### Motion Example
 
-This example uses the `motion` package. If the project instead has `framer-motion`, import the same APIs from `"framer-motion"`; never mix an installed package with the other package's import path.
+This example uses `motion`; select the import path using [Choosing Between Motion and CSS](#choosing-between-motion-and-css). The toggle examples require a stable accessible label and preserve existing handlers passed through `props`. The reduced-motion branch uses [useReducedMotion](https://motion.dev/docs/react-use-reduced-motion).
 
 ```tsx
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
-function IconButton({ isActive, icon: Icon }) {
+function ToggleIconButton({ isActive, ActiveIcon, InactiveIcon, label, ...props }) {
+  const Icon = isActive ? ActiveIcon : InactiveIcon;
+  const shouldReduceMotion = useReducedMotion();
+
   return (
-    <button>
-      <AnimatePresence mode="popLayout">
-        <motion.span
-          key={isActive ? "active" : "inactive"}
-          initial={{ opacity: 0, scale: 0.25, filter: "blur(4px)" }}
-          animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-          exit={{ opacity: 0, scale: 0.25, filter: "blur(4px)" }}
-          transition={{ type: "spring", duration: 0.3, bounce: 0 }}
-        >
-          <Icon />
-        </motion.span>
-      </AnimatePresence>
+    <button {...props} type="button" aria-label={label} aria-pressed={isActive}>
+      {shouldReduceMotion ? <Icon aria-hidden="true" /> : (
+        <AnimatePresence initial={false} mode="popLayout">
+          <motion.span
+            className="inline-flex"
+            aria-hidden="true"
+            key={isActive ? "active" : "inactive"}
+            initial={{ opacity: 0, scale: 0.25, filter: "blur(4px)" }}
+            animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+            exit={{ opacity: 0, scale: 0.25, filter: "blur(4px)" }}
+            transition={{ type: "spring", duration: 0.3, bounce: 0 }}
+          >
+            <Icon />
+          </motion.span>
+        </AnimatePresence>
+      )}
     </button>
   );
 }
@@ -219,34 +228,36 @@ If the project doesn't use Motion (Framer Motion), keep both icons in the DOM an
 The trick: one icon is absolutely positioned on top of the other. Toggling state cross-fades them — the entering icon scales up from `0.25` while the exiting icon scales down to `0.25`, both with opacity and blur.
 
 ```tsx
-function IconButton({ isActive, ActiveIcon, InactiveIcon }) {
+function ToggleIconButton({ isActive, ActiveIcon, InactiveIcon, label, ...props }) {
   return (
-    <button>
-      <div className="relative">
-        <div
+    <button {...props} type="button" aria-label={label} aria-pressed={isActive}>
+      <span className="relative inline-flex" aria-hidden="true">
+        <span
           className={cn(
             "absolute inset-0 flex items-center justify-center",
             "transition-[opacity,filter,scale] duration-300",
             "ease-[cubic-bezier(0.2,0,0,1)]",
+            "motion-reduce:transition-none motion-reduce:scale-100 motion-reduce:blur-none",
             isActive
               ? "scale-100 opacity-100 blur-0"
               : "scale-[0.25] opacity-0 blur-[4px]"
           )}
         >
           <ActiveIcon />
-        </div>
-        <div
+        </span>
+        <span
           className={cn(
             "transition-[opacity,filter,scale] duration-300",
             "ease-[cubic-bezier(0.2,0,0,1)]",
+            "motion-reduce:transition-none motion-reduce:scale-100 motion-reduce:blur-none",
             isActive
               ? "scale-[0.25] opacity-0 blur-[4px]"
               : "scale-100 opacity-100 blur-0"
           )}
         >
           <InactiveIcon />
-        </div>
-      </div>
+        </span>
+      </span>
     </button>
   );
 }
@@ -274,17 +285,20 @@ The non-absolute icon (InactiveIcon) defines the layout size. The absolute icon 
 | Icons in contextual toolbars | Icons that are always visible |
 | Loading/success state indicators | Icon labels (text next to icon) |
 
-**Important:** Always use exactly these values for contextual icon animations — do not deviate:
+### Required Icon Animation Values
+
+For interactions where the full contextual animation is appropriate, use exactly these values:
 - `scale`: `0.25` → `1` (never use `0.5` or `0.6`)
 - `opacity`: `0` → `1`
 - `filter`: `"blur(4px)"` → `"blur(0px)"`
-- `transition`: `{ type: "spring", duration: 0.3, bounce: 0 }` — **bounce must always be `0`**, never `0.1` or any other value
+- **Motion transition**: `{ type: "spring", duration: 0.3, bounce: 0 }` — **bounce must always be `0`**, never `0.1` or any other value
+- **CSS transition**: `300ms` with `cubic-bezier(0.2, 0, 0, 1)` for the same opacity, scale, and blur changes
 
 ## Scale on Press
 
-A subtle scale-down on click gives buttons tactile feedback. Always use `scale(0.96)`. Never use a value smaller than `0.95` — anything below feels exaggerated. Use CSS transitions for interruptibility — if the user releases mid-press, it should smoothly return.
+A subtle scale-down on click gives buttons tactile feedback. When applying this effect, always use `scale(0.96)`. Never use a value smaller than `0.95` — anything below feels exaggerated. Use CSS transitions for interruptibility — if the user releases mid-press, it should smoothly return.
 
-Not every button needs this. Add a `static` prop to your button component that disables the scale effect when the motion would be distracting.
+Not every button needs this. Apply [Motion Restraint](#motion-restraint) first, and add a `static` prop to disable the scale effect when it would be distracting. Preserve the static feedback when scaling is disabled.
 
 ### CSS Example
 
@@ -298,12 +312,17 @@ Not every button needs this. Add a `static` prop to your button component that d
 .button:active {
   scale: 0.96;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .button { transition: none; }
+  .button:active { scale: 1; }
+}
 ```
 
 ### Tailwind Example
 
 ```tsx
-<button className="transition-transform duration-150 ease-out active:scale-[0.96]">
+<button className="motion-safe:transition-transform motion-safe:duration-150 motion-safe:ease-out motion-safe:active:scale-[0.96]">
   Click me
 </button>
 ```
@@ -311,7 +330,8 @@ Not every button needs this. Add a `static` prop to your button component that d
 ### Motion Example
 
 ```tsx
-<motion.button whileTap={{ scale: 0.96 }}>
+// shouldReduceMotion comes from useReducedMotion().
+<motion.button whileTap={shouldReduceMotion ? undefined : { scale: 0.96 }}>
   Click me
 </motion.button>
 ```
@@ -321,13 +341,13 @@ Not every button needs this. Add a `static` prop to your button component that d
 Extract the scale class into a variable and conditionally apply it based on a `static` prop:
 
 ```tsx
-const tapScale = "active:not-disabled:scale-[0.96]";
+const tapScale = "motion-safe:active:not-disabled:scale-[0.96]";
 
 function Button({ static: isStatic, className, children, ...props }) {
   return (
     <button
       className={cn(
-        "transition-transform duration-150 ease-out",
+        "motion-safe:transition-transform motion-safe:duration-150 motion-safe:ease-out",
         !isStatic && tapScale,
         className,
       )}

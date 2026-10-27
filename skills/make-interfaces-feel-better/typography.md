@@ -1,6 +1,25 @@
 # Typography
 
-Typography rendering details that make interfaces feel better.
+Local information hierarchy and typography details that make interfaces feel better.
+
+Apply the shared [Design Token integration rules](SKILL.md#design-token-integration) to the examples below.
+
+## Local Hierarchy and Redundancy
+
+Apply these checks to the components already in scope:
+
+- Group related fields and actions using the project's spacing tokens and existing type roles. Make primary and secondary information distinguishable through spacing, alignment, and typography before adding explanatory copy.
+- Remove optional secondary labels, descriptions, eyebrow text, subtitles, introductory paragraphs, decorative badges, and repeated status copy when they repeat nearby information or add nothing needed for a decision. Keep another occurrence when it serves a distinct decision point or accessible interaction.
+- Keep page titles, field labels, and action names direct and concise. Express user-visible outcomes and constraints rather than internal implementation details.
+- Animation examples describe how to group existing content; add only content that helps the user understand or act.
+
+Reuse the state cues in Principles 18–19 of [SKILL.md](SKILL.md#18-one-svg-recolored-per-state); an existing selected style or meaningful icon can make another status sentence redundant.
+
+## Necessary Information and Interaction Semantics
+
+Retain concise information about costs, permissions, configuration limits, errors, and irreversible actions when users need it to decide or recover. Place it by the corresponding field or action using the project's existing hint, error, or description component and tokens.
+
+For controls affected by a polish change, preserve accessible names, label associations, native roles, keyboard and focus behavior, and selected or expanded state semantics. If redundant helper text is removed, update its `aria-describedby` references while retaining necessary hint and error associations. Use the existing [icon accessibility guidance](icons.md#accessible-icon-controls) for icon-only controls.
 
 ## Text Wrapping
 
@@ -140,7 +159,7 @@ When numbers update dynamically (counters, prices, timers, table columns), use t
 
 | Use tabular-nums | Don't use tabular-nums |
 | --- | --- |
-| Counters and timers | Static display numbers |
+| Counters and timers | Isolated static display numbers |
 | Prices that update | Decorative large numbers |
 | Table columns with numbers | Phone numbers, zip codes |
 | Animated number transitions | Version numbers (v2.1.0) |

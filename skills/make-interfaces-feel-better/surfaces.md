@@ -2,6 +2,8 @@
 
 Border radius, optical alignment, shadows, and image outlines.
 
+Apply the shared [Design Token integration rules](SKILL.md#design-token-integration) to the recipes below.
+
 ## Concentric Border Radius
 
 When nesting rounded elements, the outer radius must equal the inner radius plus the padding between them:
@@ -52,7 +54,7 @@ This rule is most useful when nested surfaces are close together. If padding is 
 </div>
 ```
 
-Mismatched border radii on nested elements is one of the most common things that makes interfaces feel off. Always calculate concentrically.
+Calculate concentrically when the surfaces are closely nested; use the spacing exception above for separate layers.
 
 ## Optical Alignment
 
@@ -246,11 +248,11 @@ Interactive elements should prefer a 44×44px hit area for touch or mobile conte
 ### Tailwind Example
 
 ```tsx
-<button className="relative size-5 after:absolute after:top-1/2 after:left-1/2 after:size-11 after:-translate-1/2">
-  <CheckIcon />
+<button type="button" aria-label="Confirm" className="relative size-5 after:absolute after:top-1/2 after:left-1/2 after:size-11 after:-translate-1/2">
+  <CheckIcon aria-hidden="true" />
 </button>
 ```
 
 ### Collision Rule
 
-If the extended hit area overlaps another interactive element, shrink the pseudo-element — but make it as large as possible without colliding. Two interactive elements should never have overlapping hit areas.
+Two interactive elements should never have overlapping hit areas. If an expansion would collide with another control, adjust spacing or the control's padding while preserving the applicable hit-area size above.

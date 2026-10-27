@@ -8,13 +8,21 @@ description: >-
 
 Great interfaces rarely come from a single thing. It's usually a collection of small details that compound into a great experience. Apply these principles when building or reviewing UI code. Before suggesting or writing a fix, identify the project's existing styling system and express the change in that system: Tailwind in a Tailwind project, plain CSS in a CSS project, or the established CSS-in-JS approach. Never introduce a second styling system just to apply a polish fix.
 
+## Design Token Integration
+
+Follow the project's Design Token conventions for naming, layering, themes, and states. Reuse matching tokens for spacing, typography, color, radii, shadows, and motion. Express the fixed values prescribed by the relevant principles through those tokens; add a missing reusable role through the project's established extension process while preserving the prescribed values. Keep shared tokens used by unrelated components intact. In projects without tokens, follow the existing styling conventions.
+
+Apply each principle within its stated context, including the interaction-frequency and reduced-motion conditions in Motion Restraint. Token integration must preserve required interaction semantics and feedback.
+
+Keep hierarchy and content refinements local to the requested components and within the interface-polish scope.
+
 When reviewing, slow the interface down: replay motion at 10% speed in the browser's Animations panel and walk every state: hover, focus, active, loading, empty. What feels off at 10% speed is what's subtly wrong at full speed.
 
 ## Quick Reference
 
 | Category | When to Use |
 | --- | --- |
-| [Typography](typography.md) | Text wrapping, font smoothing, tabular numbers |
+| [Typography](typography.md) | Local hierarchy, information redundancy, necessary hints, text wrapping, font smoothing, tabular numbers |
 | [Surfaces](surfaces.md) | Border radius, optical alignment, shadows, image outlines, hit areas |
 | [Animations](animations.md) | Interruptible animations, enter/exit transitions, icon animations, scale on press, motion restraint |
 | [Icons](icons.md) | Icon stroke weight, states via `currentColor`, outline vs fill, sizing, RTL flipping |
@@ -24,7 +32,7 @@ When reviewing, slow the interface down: replay motion at 10% speed in the brows
 
 ### 1. Concentric Border Radius
 
-Outer radius = inner radius + padding. Mismatched radii on nested elements is the most common thing that makes interfaces feel off.
+For closely nested rounded surfaces, outer radius = inner radius + padding. When the layers read as separate surfaces, follow the [spacing exception](surfaces.md#concentric-border-radius).
 
 ### 2. Optical Over Geometric Alignment
 
@@ -44,11 +52,11 @@ For an infrequent staged entrance where sequence helps communicate hierarchy, br
 
 ### 6. Subtle Exit Animations
 
-Use a small fixed `translateY` instead of full height. Exits should be softer than enters. Use `ease-out` for both enter and exit transitions.
+For contextual fades, use a small fixed `translateY` instead of full height. Exits should be softer than enters. Use `ease-out` for both enter and exit transitions. Use full travel when spatial context requires it, or immediate removal under the [Motion Restraint](animations.md#motion-restraint) conditions.
 
 ### 7. Contextual Icon Animations
 
-Animate icons with `opacity`, `scale`, and `blur` instead of toggling visibility. Use exactly these values: scale from `0.25` to `1`, opacity from `0` to `1`, blur from `4px` to `0px`. If the project has `motion` or `framer-motion` in `package.json`, match that package's import path (or the established nearby imports when both exist) and use `transition: { type: "spring", duration: 0.3, bounce: 0 }` — bounce must always be `0`. If no motion library is installed, keep both icons in the DOM (one absolute-positioned) and cross-fade with CSS transitions using `cubic-bezier(0.2, 0, 0, 1)` — this gives both enter and exit animations without any dependency.
+When motion is appropriate under Principle 19, animate contextual icon changes with `opacity`, `scale`, and `blur` instead of toggling visibility. Use the prescribed [contextual icon parameters](animations.md#required-icon-animation-values). Follow the [package-selection guidance](animations.md#choosing-between-motion-and-css) to use the installed motion library or a CSS cross-fade without adding a dependency.
 
 ### 8. Font Smoothing
 
@@ -60,15 +68,15 @@ Use `font-variant-numeric: tabular-nums` for any dynamically updating numbers to
 
 ### 10. Text Wrapping
 
-Use `text-wrap: balance` on headings. Use `text-wrap: pretty` for body text to avoid orphans.
+Use `text-wrap: balance` on short headings and `text-wrap: pretty` on short-to-medium body text to avoid orphans. Keep the defaults for long or preformatted text; see [Typography](typography.md#when-to-use-which).
 
 ### 11. Image Outlines
 
-Add a subtle `1px` outline with low opacity to images for consistent depth. The color must be pure black in light mode (`oklch(0 0 0 / 0.1)`) and pure white in dark mode (`oklch(1 0 0 / 0.1)`), never a near-black like slate, zinc, or any tinted neutral. A tinted outline picks up the surface color underneath it and reads as dirt on the image edge.
+Add a subtle `1px` outline with low opacity to images for consistent depth. Use the [required image-outline colors](surfaces.md#color-rules-non-negotiable): pure black in light mode and pure white in dark mode.
 
 ### 12. Scale on Press
 
-A subtle `scale(0.96)` on click gives buttons tactile feedback. Always use `0.96`. Never use a value smaller than `0.95` — anything below feels exaggerated. Add a `static` prop to disable it when motion would be distracting.
+A subtle `scale(0.96)` on click gives buttons tactile feedback. When applying this effect, always use `0.96`. Never use a value smaller than `0.95` — anything below feels exaggerated. Add a `static` prop to disable it when motion would be distracting, and apply Principle 19 for high-frequency interactions or reduced motion.
 
 ### 13. Skip Animation on Page Load
 
@@ -88,34 +96,44 @@ Interactive elements should prefer a 44×44px hit area for touch or mobile conte
 
 ### 17. Match Icon Stroke to Text Weight
 
-An icon next to text carries the text's optical weight: `1.5px` stroke beside regular (400) text, `2px` beside semibold (600). One stroke weight per icon set; never mix libraries on one surface.
+An icon next to text carries the text's optical weight: `1.5px` stroke beside regular (400) text, `2px` beside semibold (600). Keep stroke weights consistent for equivalent text roles within the icon set; never mix libraries on one surface.
 
 ### 18. One SVG, Recolored per State
 
-Icons use `currentColor` and get their states (hover, selected, disabled) from CSS color and opacity, never from separate assets. Outline variant is the default; fill variant marks the active state.
+For color-only state changes, reuse one `currentColor` SVG and drive hover, selected, and disabled states with CSS color and opacity. Outline is the default; fill marks the active state through the icon family's corresponding variant. A meaningful shape change can use a different glyph; recoloring alone does not need a separate asset.
 
 ### 19. Motion Restraint
 
 No custom animation on high-frequency interactions: the attention cost repeats on every trigger. Motion is never the only feedback channel; every animated state change also needs a static cue such as color, icon, or label.
 
+### 20. Hierarchy Before Extra Copy
+
+Use grouping, spacing, alignment, the existing type scale, and the state cues from Principles 18–19 to explain relationships before adding secondary labels or descriptions. Prefer one useful occurrence of each piece of information; use the [local hierarchy and redundancy guidance](typography.md#local-hierarchy-and-redundancy) to decide what to remove.
+
+### 21. Preserve Meaning and Interaction
+
+Keep information needed to decide or recover near the relevant action or field. Preserve existing permissions, business behavior, interaction flow, and control semantics while polishing. Apply the [retention and semantics guidance](typography.md#necessary-information-and-interaction-semantics) when simplifying visible content.
+
 ## Common Mistakes
 
 | Mistake | Fix |
 | --- | --- |
-| Same border radius on parent and child | Calculate `outerRadius = innerRadius + padding` |
+| Same border radius on closely nested parent and child | Calculate `outerRadius = innerRadius + padding` |
 | Icons look off-center | Adjust optically with padding or fix SVG directly |
 | Border used only to fake elevation | Use layered `box-shadow` with transparency; keep structural and state borders |
 | Jarring staged entrance or contextual exit | Stagger infrequent entrances and keep context-preserving exits subtle |
 | Numbers cause layout shift | Apply `tabular-nums` |
 | Heavy text on macOS | Apply `antialiased` to root |
-| Animation plays on page load | Add `initial={false}` to `AnimatePresence` |
+| Unintended state-change animation plays on page load | Add `initial={false}` to `AnimatePresence`; preserve intentional entrances |
 | `transition: all` on elements | Specify exact properties |
 | First-frame animation stutter | Add `will-change: transform` (sparingly) |
 | Tiny hit areas on small controls | Extend with a pseudo-element to 44×44px for touch/mobile, or at least 40×40px in dense desktop UI |
 | Hairline icon beside bold text | Match the stroke width to the text weight |
-| Separate icon assets per state | One `currentColor` SVG, states via CSS |
+| Separate icon assets that differ only in color | One `currentColor` SVG, color states via CSS |
 | Filled icons everywhere | Outline as default, fill only for the active state |
 | Entrance animation on every hover or keystroke | Instant feedback or ≤150ms opacity/color transition |
+| Titles, descriptions, badges, and status text repeat the same information | Keep the useful occurrence and let grouping, spacing, type, and existing state cues carry hierarchy |
+| Visual simplification removes a necessary hint or changes an interaction | Retain decision and error information by its control and preserve the interaction semantics |
 
 ## Review Output Format
 
@@ -164,7 +182,7 @@ Consolidate a repeated systemic issue into one row and list every affected locat
 #### Scale on press
 | Severity | Location | Before | After | Why |
 | --- | --- | --- | --- | --- |
-| LOW | `src/Button.tsx:19` | `<button className="...">` | Add `active:scale-[0.96] transition-transform` | Press feedback makes the control feel responsive |
+| LOW | `src/Button.tsx:19` | Local button omits the shared component's press feedback in an infrequent interaction with motion enabled | Reuse the shared `active:scale-[0.96] transition-transform` styles | Restore the existing feedback contract where the effect is appropriate |
 | MEDIUM | `src/button.css:24` | `scale(0.9)` on press | Raise to `scale(0.96)` | Anything below `0.95` feels exaggerated |
 
 ### Considered but Rejected
